@@ -6,16 +6,16 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - uses: actions/checkout@v4          # <-- v3 jadi v4
+      - uses: actions/setup-node@v4        # <-- v3 jadi v4
         with:
-          node-version: 18
+          node-version: 20                 # bisa disesuaikan, 20 masih aman untuk build
       - run: npm ci
       - run: npm run build
         env:
           VITE_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-      - uses: peaceiris/actions-gh-pages@v3
+      - uses: peaceiris/actions-gh-pages@v4  # <-- opsional, v4 juga lebih baru
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./dist
