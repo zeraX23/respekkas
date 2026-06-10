@@ -12,6 +12,7 @@
     button { cursor: pointer; border: none; padding: 0.6rem 1.2rem; border-radius: 0.5rem; font-weight: 600; }
     .primary { background: #2563eb; color: white; }
     .danger { background: #ef4444; color: white; }
+    .secondary { background: #e2e8f0; color: #1e293b; }
     input, select { width: 100%; padding: 0.6rem; border: 1px solid #cbd5e1; border-radius: 0.5rem; margin-top: 0.25rem; margin-bottom: 0.75rem; }
     .flex { display: flex; justify-content: space-between; align-items: center; }
     .grid { display: grid; gap: 1rem; }
@@ -20,6 +21,7 @@
     .expense { color: #ef4444; }
     table { width: 100%; border-collapse: collapse; }
     th, td { text-align: left; padding: 0.5rem; border-bottom: 1px solid #e2e8f0; }
+    .login-toggle { text-align: right; margin-bottom: 1rem; }
     @media (max-width: 480px) {
       .container { padding: 1rem 0.5rem; }
       .saldo { font-size: 1.5rem; }
@@ -27,25 +29,11 @@
   </style>
 </head>
 <body>
-  <!-- HALAMAN LOGIN (awalnya terlihat) -->
-  <div id="login-page" class="container" style="max-width: 400px; margin-top: 10vh;">
-    <div class="card">
-      <h2 style="text-align:center;">💰 PEMUDA RESPEK</h2>
-      <p style="text-align:center;">Login Pengurus</p>
-      <form id="login-form">
-        <input type="email" id="email" placeholder="Email" required>
-        <input type="password" id="password" placeholder="Password" required>
-        <p id="login-error" style="color:red;"></p>
-        <button class="primary" style="width:100%;">Masuk</button>
-      </form>
-    </div>
-  </div>
-
-  <!-- DASHBOARD (disembunyikan sampai login) -->
-  <div id="dashboard" class="container" style="display:none;">
+  <div id="app" class="container">
+    <!-- DASHBOARD UTAMA (selalu tampil) -->
     <div class="flex">
       <h2>📊 Dashboard Pemuda RESPEK</h2>
-      <button id="logout-btn" class="danger">Keluar</button>
+      <div id="login-area"></div>
     </div>
 
     <div class="card">
@@ -53,8 +41,9 @@
       <div id="saldo" class="saldo">Rp 0</div>
     </div>
 
-    <div class="card">
-      <h3>Catat Transaksi</h3>
+    <!-- Form tambah transaksi (hanya muncul setelah login) -->
+    <div id="form-card" class="card" style="display: none;">
+      <h3>Catat Transaksi (Pengurus)</h3>
       <form id="transaksi-form">
         <div class="grid" style="grid-template-columns: 1fr 1fr;">
           <select id="type" required>
@@ -69,6 +58,7 @@
       </form>
     </div>
 
+    <!-- Riwayat transaksi (selalu tampil) -->
     <div class="card">
       <h3>Riwayat Transaksi</h3>
       <div style="overflow-x:auto;">
@@ -79,18 +69,105 @@
               <th>Jenis</th>
               <th>Kategori</th>
               <th>Jumlah</th>
-              <th>Aksi</th>
+              <th id="aksi-header" style="display:none;">Aksi</th>
             </tr>
           </thead>
           <tbody id="transactions-body">
-            <tr><td colspan="5">Belum ada transaksi.</td></tr>
+            <tr><td colspan="4">Memuat...</td></tr>
           </tbody>
         </table>
       </div>
     </div>
   </div>
 
-  <!-- SUPABASE CDN (ESM) -->
+  <!-- Supabase CDN -->
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/+esm';
+
+    // ⚠️ GANTI DENGAN DATA PROYEK SUPABASE KAMU ⚠️
+    const SUPABASE_URL = '<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PEMUDA RESPEK - Keuangan</title>
+  <style>
+    :root { font-family: system-ui, sans-serif; background: #f5f7fb; color: #1e293b; }
+    body { margin: 0; padding: 0; }
+    .container { max-width: 720px; margin: 0 auto; padding: 2rem 1rem; }
+    .card { background: white; border-radius: 1rem; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 1.5rem; }
+    button { cursor: pointer; border: none; padding: 0.6rem 1.2rem; border-radius: 0.5rem; font-weight: 600; }
+    .primary { background: #2563eb; color: white; }
+    .danger { background: #ef4444; color: white; }
+    .secondary { background: #e2e8f0; color: #1e293b; }
+    input, select { width: 100%; padding: 0.6rem; border: 1px solid #cbd5e1; border-radius: 0.5rem; margin-top: 0.25rem; margin-bottom: 0.75rem; }
+    .flex { display: flex; justify-content: space-between; align-items: center; }
+    .grid { display: grid; gap: 1rem; }
+    .saldo { font-size: 2rem; font-weight: 700; }
+    .income { color: #16a34a; }
+    .expense { color: #ef4444; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 0.5rem; border-bottom: 1px solid #e2e8f0; }
+    .login-toggle { text-align: right; margin-bottom: 1rem; }
+    @media (max-width: 480px) {
+      .container { padding: 1rem 0.5rem; }
+      .saldo { font-size: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <div id="app" class="container">
+    <!-- DASHBOARD UTAMA (selalu tampil) -->
+    <div class="flex">
+      <h2>📊 Dashboard Pemuda RESPEK</h2>
+      <div id="login-area"></div>
+    </div>
+
+    <div class="card">
+      <p>Saldo Kas Saat Ini</p>
+      <div id="saldo" class="saldo">Rp 0</div>
+    </div>
+
+    <!-- Form tambah transaksi (hanya muncul setelah login) -->
+    <div id="form-card" class="card" style="display: none;">
+      <h3>Catat Transaksi (Pengurus)</h3>
+      <form id="transaksi-form">
+        <div class="grid" style="grid-template-columns: 1fr 1fr;">
+          <select id="type" required>
+            <option value="income">Pemasukan</option>
+            <option value="expense">Pengeluaran</option>
+          </select>
+          <input type="number" id="amount" placeholder="Jumlah" required>
+        </div>
+        <input type="text" id="desc" placeholder="Keterangan (opsional)">
+        <input type="text" id="category" placeholder="Kategori (contoh: Donasi, Konsumsi)" value="Umum">
+        <button class="primary" style="width:100%;">Simpan</button>
+      </form>
+    </div>
+
+    <!-- Riwayat transaksi (selalu tampil) -->
+    <div class="card">
+      <h3>Riwayat Transaksi</h3>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Tanggal</th>
+              <th>Jenis</th>
+              <th>Kategori</th>
+              <th>Jumlah</th>
+              <th id="aksi-header" style="display:none;">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="transactions-body">
+            <tr><td colspan="4">Memuat...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Supabase CDN -->
   <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/+esm';
 
@@ -100,50 +177,99 @@
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // Elemen UI
-    const loginPage = document.getElementById('login-page');
-    const dashboard = document.getElementById('dashboard');
-    const loginForm = document.getElementById('login-form');
-    const loginError = document.getElementById('login-error');
-    const logoutBtn = document.getElementById('logout-btn');
+    // Elemen DOM
     const saldoEl = document.getElementById('saldo');
-    const transaksiForm = document.getElementById('transaksi-form');
     const transactionsBody = document.getElementById('transactions-body');
+    const transaksiForm = document.getElementById('transaksi-form');
+    const formCard = document.getElementById('form-card');
+    const loginArea = document.getElementById('login-area');
+    const aksiHeader = document.getElementById('aksi-header');
 
+    let session = null;
     let transactions = [];
 
-    // Cek session saat load
-    async function checkSession() {
-      const { data: { session } } = await supabase.auth.getSession();
+    // --- Cek session & render UI ---
+    async function init() {
+      const { data } = await supabase.auth.getSession();
+      session = data.session;
+      renderLoginUI();
+      await fetchTransactions();
+    }
+
+    // Render tombol login/logout
+    function renderLoginUI() {
       if (session) {
-        showDashboard();
-        await fetchTransactions();
+        loginArea.innerHTML = `
+          <span style="margin-right:1rem;">🔑 ${session.user.email}</span>
+          <button id="logout-btn" class="danger">Keluar</button>
+        `;
+        document.getElementById('logout-btn').addEventListener('click', handleLogout);
+        formCard.style.display = 'block';
+        aksiHeader.style.display = 'table-cell';
       } else {
-        showLogin();
+        loginArea.innerHTML = `<button id="login-btn" class="primary">Login Pengurus</button>`;
+        document.getElementById('login-btn').addEventListener('click', showLoginForm);
+        formCard.style.display = 'none';
+        aksiHeader.style.display = 'none';
       }
     }
 
-    function showLogin() {
-      loginPage.style.display = 'block';
-      dashboard.style.display = 'none';
+    // Tampilkan form login (modal sederhana)
+    function showLoginForm() {
+      const username = prompt('Masukkan Username:');
+      if (!username) return;
+      const password = prompt('Masukkan Password:');
+      if (!password) return;
+
+      // Konversi username ke email pengurus
+      let email = '';
+      if (username.toUpperCase() === 'RESPEK') {
+        email = 'respek@pemudarespek.id';
+      } else {
+        alert('Username tidak dikenali.');
+        return;
+      }
+
+      handleLogin(email, password);
     }
 
-    function showDashboard() {
-      loginPage.style.display = 'none';
-      dashboard.style.display = 'block';
+    // Login
+    async function handleLogin(email, password) {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        alert('Login gagal: ' + error.message);
+      } else {
+        // Refresh session & UI
+        const { data } = await supabase.auth.getSession();
+        session = data.session;
+        renderLoginUI();
+        await fetchTransactions();
+      }
     }
 
-    // Fetch transaksi dari Supabase
+    // Logout
+    async function handleLogout() {
+      await supabase.auth.signOut();
+      session = null;
+      transactions = [];
+      renderLoginUI();
+      await fetchTransactions();
+    }
+
+    // Ambil data transaksi (publik bisa akses)
     async function fetchTransactions() {
       const { data, error } = await supabase
         .from('transactions')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (!error) {
-        transactions = data || [];
-        renderTransactions();
+      if (error) {
+        console.error(error);
+        transactionsBody.innerHTML = '<tr><td colspan="4">Gagal memuat data.</td></tr>';
+        return;
       }
+      transactions = data || [];
+      renderTransactions();
     }
 
     // Hitung saldo & render tabel
@@ -152,9 +278,12 @@
       saldoEl.textContent = `Rp ${saldo.toLocaleString('id-ID')}`;
 
       if (transactions.length === 0) {
-        transactionsBody.innerHTML = '<tr><td colspan="5">Belum ada transaksi.</td></tr>';
+        transactionsBody.innerHTML = '<tr><td colspan="4">Belum ada transaksi.</td></tr>';
         return;
       }
+
+      const kolomAksi = session ? `<td></td>` : '';
+      const headerKolom = session ? '<th></th>' : '';
 
       transactionsBody.innerHTML = transactions.map(t => `
         <tr>
@@ -164,45 +293,26 @@
           </td>
           <td>${t.category || ''}</td>
           <td>Rp ${t.amount.toLocaleString('id-ID')}</td>
-          <td>
-            <button class="danger" style="padding:0.3rem 0.6rem;" data-id="${t.id}">Hapus</button>
-          </td>
+          ${session ? `<td><button class="danger" style="padding:0.3rem 0.6rem;" data-id="${t.id}">Hapus</button></td>` : ''}
         </tr>
       `).join('');
 
-      // Pasang event listener hapus
-      document.querySelectorAll('button[data-id]').forEach(btn => {
-        btn.addEventListener('click', () => handleDelete(btn.dataset.id));
-      });
+      // Pasang event listener hapus jika login
+      if (session) {
+        document.querySelectorAll('button[data-id]').forEach(btn => {
+          btn.addEventListener('click', () => handleDelete(btn.dataset.id));
+        });
+      }
     }
 
-    // Login
-    loginForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      loginError.textContent = '';
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
-
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) {
-        loginError.textContent = error.message;
-      } else {
-        showDashboard();
-        await fetchTransactions();
-        loginForm.reset();
-      }
-    });
-
-    // Logout
-    logoutBtn.addEventListener('click', async () => {
-      await supabase.auth.signOut();
-      transactions = [];
-      showLogin();
-    });
-
-    // Tambah transaksi
+    // Tambah transaksi (hanya pengurus)
     transaksiForm.addEventListener('submit', async (e) => {
       e.preventDefault();
+      if (!session) {
+        alert('Anda harus login sebagai pengurus.');
+        return;
+      }
+
       const type = document.getElementById('type').value;
       const amount = parseFloat(document.getElementById('amount').value);
       const description = document.getElementById('desc').value;
@@ -214,31 +324,212 @@
         .from('transactions')
         .insert([{ type, amount, description, category }]);
 
-      if (!error) {
-        transaksiForm.reset();
-        document.getElementById('category').value = 'Umum'; // reset ke default
-        await fetchTransactions();
-      } else {
+      if (error) {
         alert('Gagal menyimpan: ' + error.message);
+      } else {
+        transaksiForm.reset();
+        document.getElementById('category').value = 'Umum';
+        await fetchTransactions();
       }
     });
 
-    // Hapus transaksi
+    // Hapus transaksi (hanya pengurus)
     async function handleDelete(id) {
+      if (!session) return;
       const { error } = await supabase
         .from('transactions')
         .delete()
         .eq('id', id);
 
-      if (!error) {
-        await fetchTransactions();
-      } else {
+      if (error) {
         alert('Gagal menghapus: ' + error.message);
+      } else {
+        await fetchTransactions();
       }
     }
 
-    // Jalankan pengecekan awal
-    checkSession();
+    // Jalankan
+    init();
+  </script>
+</body>
+</html>';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...';
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // Elemen DOM
+    const saldoEl = document.getElementById('saldo');
+    const transactionsBody = document.getElementById('transactions-body');
+    const transaksiForm = document.getElementById('transaksi-form');
+    const formCard = document.getElementById('form-card');
+    const loginArea = document.getElementById('login-area');
+    const aksiHeader = document.getElementById('aksi-header');
+
+    let session = null;
+    let transactions = [];
+
+    // --- Cek session & render UI ---
+    async function init() {
+      const { data } = await supabase.auth.getSession();
+      session = data.session;
+      renderLoginUI();
+      await fetchTransactions();
+    }
+
+    // Render tombol login/logout
+    function renderLoginUI() {
+      if (session) {
+        loginArea.innerHTML = `
+          <span style="margin-right:1rem;">🔑 ${session.user.email}</span>
+          <button id="logout-btn" class="danger">Keluar</button>
+        `;
+        document.getElementById('logout-btn').addEventListener('click', handleLogout);
+        formCard.style.display = 'block';
+        aksiHeader.style.display = 'table-cell';
+      } else {
+        loginArea.innerHTML = `<button id="login-btn" class="primary">Login Pengurus</button>`;
+        document.getElementById('login-btn').addEventListener('click', showLoginForm);
+        formCard.style.display = 'none';
+        aksiHeader.style.display = 'none';
+      }
+    }
+
+    // Tampilkan form login (modal sederhana)
+    function showLoginForm() {
+      const username = prompt('Masukkan Username:');
+      if (!username) return;
+      const password = prompt('Masukkan Password:');
+      if (!password) return;
+
+      // Konversi username ke email pengurus
+      let email = '';
+      if (username.toUpperCase() === 'RESPEK') {
+        email = 'respek@pemudarespek.id';
+      } else {
+        alert('Username tidak dikenali.');
+        return;
+      }
+
+      handleLogin(email, password);
+    }
+
+    // Login
+    async function handleLogin(email, password) {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        alert('Login gagal: ' + error.message);
+      } else {
+        // Refresh session & UI
+        const { data } = await supabase.auth.getSession();
+        session = data.session;
+        renderLoginUI();
+        await fetchTransactions();
+      }
+    }
+
+    // Logout
+    async function handleLogout() {
+      await supabase.auth.signOut();
+      session = null;
+      transactions = [];
+      renderLoginUI();
+      await fetchTransactions();
+    }
+
+    // Ambil data transaksi (publik bisa akses)
+    async function fetchTransactions() {
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error(error);
+        transactionsBody.innerHTML = '<tr><td colspan="4">Gagal memuat data.</td></tr>';
+        return;
+      }
+      transactions = data || [];
+      renderTransactions();
+    }
+
+    // Hitung saldo & render tabel
+    function renderTransactions() {
+      const saldo = transactions.reduce((acc, t) => acc + (t.type === 'income' ? t.amount : -t.amount), 0);
+      saldoEl.textContent = `Rp ${saldo.toLocaleString('id-ID')}`;
+
+      if (transactions.length === 0) {
+        transactionsBody.innerHTML = '<tr><td colspan="4">Belum ada transaksi.</td></tr>';
+        return;
+      }
+
+      const kolomAksi = session ? `<td></td>` : '';
+      const headerKolom = session ? '<th></th>' : '';
+
+      transactionsBody.innerHTML = transactions.map(t => `
+        <tr>
+          <td>${new Date(t.created_at).toLocaleDateString('id-ID')}</td>
+          <td class="${t.type === 'income' ? 'income' : 'expense'}">
+            ${t.type === 'income' ? 'Masuk' : 'Keluar'}
+          </td>
+          <td>${t.category || ''}</td>
+          <td>Rp ${t.amount.toLocaleString('id-ID')}</td>
+          ${session ? `<td><button class="danger" style="padding:0.3rem 0.6rem;" data-id="${t.id}">Hapus</button></td>` : ''}
+        </tr>
+      `).join('');
+
+      // Pasang event listener hapus jika login
+      if (session) {
+        document.querySelectorAll('button[data-id]').forEach(btn => {
+          btn.addEventListener('click', () => handleDelete(btn.dataset.id));
+        });
+      }
+    }
+
+    // Tambah transaksi (hanya pengurus)
+    transaksiForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!session) {
+        alert('Anda harus login sebagai pengurus.');
+        return;
+      }
+
+      const type = document.getElementById('type').value;
+      const amount = parseFloat(document.getElementById('amount').value);
+      const description = document.getElementById('desc').value;
+      const category = document.getElementById('category').value;
+
+      if (!amount || amount <= 0) return;
+
+      const { error } = await supabase
+        .from('transactions')
+        .insert([{ type, amount, description, category }]);
+
+      if (error) {
+        alert('Gagal menyimpan: ' + error.message);
+      } else {
+        transaksiForm.reset();
+        document.getElementById('category').value = 'Umum';
+        await fetchTransactions();
+      }
+    });
+
+    // Hapus transaksi (hanya pengurus)
+    async function handleDelete(id) {
+      if (!session) return;
+      const { error } = await supabase
+        .from('transactions')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        alert('Gagal menghapus: ' + error.message);
+      } else {
+        await fetchTransactions();
+      }
+    }
+
+    // Jalankan
+    init();
   </script>
 </body>
 </html>
